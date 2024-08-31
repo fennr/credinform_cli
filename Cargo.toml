@@ -1,0 +1,18 @@
+[package]
+name = "credinform_cli"
+version = "0.1.0"
+edition = "2021"
+authors = ["Viktor Merkurev <mr.fennr@ya.ru>"]
+description = "Credinform cli API client"
+repository = "https://github.com/fennr/credinform-cli"
+keywords = ["credinform", "cli", "api"]
+readme = "README.md"
+
+[dependencies]
+cargo-edit = "0.12.3"
+clap = { version = "4.5.16", features = ["derive"] }
+dotenv = "0.15.0"
+reqwest = { version = "0.12.7", features = ["json"] }
+serde = "1.0.209"
+serde_json = "1.0.127"
+tokio = { version = "1.40.0", features = ["full"] }
