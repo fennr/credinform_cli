@@ -12,16 +12,13 @@ impl std::fmt::Display for CredinformData {
 }
 
 impl CredinformData {
-    pub fn new(response: serde_json::Value) -> Self {
-        let data = response
-            .get("data")
-            .ok_or("Failed to get data")
-            .unwrap()
-            .as_object()
-            .ok_or("Failed to get data")
-            .unwrap();
+    pub fn new(response: serde_json::Value) -> Result<Self, String> {
+        let mut data = Map::new();
+        if let Some(data_value) = response.get("data").and_then(|v| v.as_object()) {
+            data = data_value.clone();
+        }
 
-        CredinformData(data.clone())
+        Ok(CredinformData(data))
     }
     pub fn save_data(&self, address: &Address) -> Result<(), Box<dyn std::error::Error>> {
         let mut file = std::fs::File::create(format!("{}.json", address))?;

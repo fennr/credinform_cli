@@ -114,7 +114,7 @@ pub async fn get_data(
         let response = response.json::<serde_json::Value>().await?;
         let data = CredinformData::new(response);
         println!("Data: {:?}", data);
-        Ok(data)
+        Ok(data?)
     } else {
         Err(format!(
             "Failed request to {}; Request status: {})",
