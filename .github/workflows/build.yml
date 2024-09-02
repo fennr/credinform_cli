@@ -1,4 +1,4 @@
-name: Build Linux
+name: Build artifact
 
 on:
   push:
@@ -8,20 +8,24 @@ on:
 
 jobs:
   build:
-    name: Build
+    name: Build ${{ matrix.target }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [x86_64-pc-windows-gnu, x86_64-unknown-linux-musl]
     steps:
       - uses: actions/checkout@master
       - name: Compile
         id: compile
         uses: rust-build/rust-build.action@v1.4.5
         with:
-          RUSTTARGET: x86_64-unknown-linux-musl
-          UPLOAD_MODE: release
+          RUSTTARGET: ${{ matrix.target }}
+          UPLOAD_MODE: none
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: Binary
+          name: credinform_cli_artifacts
           path: |
             ${{ steps.compile.outputs.BUILT_ARCHIVE }}
             ${{ steps.compile.outputs.BUILT_CHECKSUM }}
