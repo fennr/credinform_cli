@@ -6,8 +6,13 @@ use super::models::{AccessToken, Address, CredinformData, TaxNumber};
 
 pub async fn get_token(client: &Client) -> Result<AccessToken, Box<dyn Error>> {
     dotenv().ok();
-    let username = std::env::var("CREDINFORM_USERNAME")?;
-    let password = std::env::var("CREDINFORM_PASSWORD")?;
+
+    let username = std::env::var("CREDINFORM_USERNAME").map_err(|_| {
+        Box::<dyn std::error::Error>::from("Failed to get CREDINFORM_USERNAME environment variable")
+    })?;
+    let password = std::env::var("CREDINFORM_PASSWORD").map_err(|_| {
+        Box::<dyn std::error::Error>::from("Failed to get CREDINFORM_PASSWORD environment variable")
+    })?;
 
     let response = client
         .post("https://restapi.credinform.ru/api/Authorization/GetAccessKey")
