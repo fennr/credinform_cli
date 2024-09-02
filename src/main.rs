@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let data: CredinformData =
         api::get_data(&client, &token, &args.tax_number, &args.address).await?;
 
-    data.save_data(&args.address)?;
+    data.save_data(&args.address, &args.tax_number)?;
 
     Ok(())
 }
