@@ -4,20 +4,21 @@ use std::fs;
 use toml;
 
 #[derive(Deserialize, Serialize)]
-struct Credinform {
+pub struct Credinform {
     username: String,
     password: String,
     api_version: String,
+    pub fields: Vec<String>,
 }
 
 #[derive(Deserialize, Serialize)]
-struct Data {
-    credinform: Credinform,
+pub struct Data {
+    pub credinform: Credinform,
 }
 
 pub struct Client {
     client: reqwest::Client,
-    data: Data,
+    pub data: Data,
 }
 
 impl Client {
@@ -30,6 +31,7 @@ impl Client {
                         username: "your_username".to_string(),
                         password: "your_password".to_string(),
                         api_version: "1.7".to_string(),
+                        fields: Vec::new(),
                     },
                 };
                 let content = toml::to_string(&data)?;

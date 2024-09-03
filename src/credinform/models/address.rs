@@ -24,3 +24,15 @@ impl std::fmt::Display for Address {
         write!(f, "{}", self.0)
     }
 }
+
+impl Address {
+    pub fn new(address: &str) -> Self {
+        Address(address.to_string())
+    }
+    pub fn from_vec(addresses: &Vec<String>) -> Vec<Self> {
+        addresses
+            .iter()
+            .map(|a| Address::new(a))
+            .collect::<Vec<Self>>()
+    }
+}
