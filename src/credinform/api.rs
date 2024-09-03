@@ -28,7 +28,7 @@ async fn search_company(
     client: &Client,
     access_key: &AccessToken,
     tax_number: &TaxNumber,
-) -> Result<String, Box<dyn Error>> {
+) -> Result<SearchCompany, Box<dyn Error>> {
     let url = Url::parse_with_params(
         "https://restapi.credinform.ru/api/Search/SearchCompany",
         &[("apiVersion", client.api_version())],
@@ -57,11 +57,15 @@ async fn search_company(
 
     let company_id = company_data_list
         .first()
-        .and_then(|v| v.get("companyId"))
-        .and_then(|v| v.as_str())
+        .and_then(|v| v.get("companyId").and_then(|v| v.as_str()))
         .ok_or("Failed to get companyId. Company not found")?;
 
-    Ok(company_id.to_string())
+    let company_name = company_data_list
+        .first()
+        .and_then(|v| v.get("companyName").and_then(|v| v.as_str()))
+        .ok_or("Failed to get companyName. Company not found")?;
+
+    Ok(SearchCompany::new(company_id, company_name))
 }
 
 pub async fn get_data(
@@ -81,8 +85,9 @@ pub async fn get_data(
     println!("URL: {}", url);
     println!("Tax number: {}", tax_number);
 
-    let company_id = search_company(client, access_key, tax_number).await?;
-    println!("Company ID: {}", company_id);
+    let company = search_company(client, access_key, tax_number).await?;
+    println!("Company ID: {}", company.id);
+    println!("Company Name: {}", company.name);
 
     let response = client
         .post(url.clone())
@@ -90,7 +95,7 @@ pub async fn get_data(
         .header("Accept", "text/plain")
         .header("accessKey", access_key.to_string())
         .json(&serde_json::json!({
-            "companyId": company_id,
+            "companyId": company.id,
             "language": "Russian",
         }))
         .send()
@@ -99,7 +104,6 @@ pub async fn get_data(
     if response.status().is_success() {
         let response = response.json::<serde_json::Value>().await?;
         let data = CredinformData::new(company.name.as_str(), response);
-        println!("Data: {:?}", data);
         Ok(data?)
     } else {
         Err(format!(

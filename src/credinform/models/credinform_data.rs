@@ -3,7 +3,10 @@ use serde::Serialize;
 use serde_json::Map;
 
 #[derive(Debug, Clone, Serialize)]
-pub struct CredinformData(Map<String, serde_json::Value>);
+pub struct CredinformData {
+    company_name: String,
+    data: Map<String, serde_json::Value>,
+}
 
 struct FilePath<'a> {
     address: &'a Address,
@@ -27,29 +30,41 @@ impl std::fmt::Display for FilePath<'_> {
 
 impl std::fmt::Display for CredinformData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self.0)
+        write!(f, "{:?}", self.data)
     }
 }
 
 impl CredinformData {
-    pub fn new(response: serde_json::Value) -> Result<Self, String> {
+    pub fn new(name: &str, response: serde_json::Value) -> Result<Self, String> {
         let mut data = Map::new();
         if let Some(data_value) = response.get("data").and_then(|v| v.as_object()) {
             data = data_value.clone();
         }
 
-        Ok(CredinformData(data))
+        Ok(CredinformData {
+            company_name: name.to_string(),
+            data,
+        })
     }
 
-    pub fn save_data(
+    pub fn to_file(
         &self,
         address: &Address,
         tax_number: &TaxNumber,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let path = FilePath::new(address, tax_number);
-        let mut file = std::fs::File::create(format!("{}", path))?;
-        serde_json::to_writer_pretty(&mut file, &self.0)?;
-        println!("Data saved to {}", path);
+        let path = format!(
+            "credinform_data/{} - {}",
+            tax_number, &self.company_name
+        );
+        std::fs::create_dir_all(&path)?;
+        let file_path = format!("{}/{}.json", path, address);
+        let mut file = std::fs::File::create(&file_path)?;
+        serde_json::to_writer_pretty(&mut file, &self.data)?;
+        println!(
+            "Data saved to {}/{}",
+            std::env::current_dir()?.display(),
+            file_path
+        );
         Ok(())
     }
 }
