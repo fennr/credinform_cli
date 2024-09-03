@@ -8,26 +8,6 @@ pub struct CredinformData {
     data: Map<String, serde_json::Value>,
 }
 
-struct FilePath<'a> {
-    address: &'a Address,
-    tax_number: &'a TaxNumber,
-}
-
-impl<'a> FilePath<'a> {
-    fn new(address: &'a Address, tax_number: &'a TaxNumber) -> Self {
-        FilePath {
-            address,
-            tax_number,
-        }
-    }
-}
-
-impl std::fmt::Display for FilePath<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}_{}.json", self.tax_number, self.address)
-    }
-}
-
 impl std::fmt::Display for CredinformData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self.data)
@@ -52,10 +32,7 @@ impl CredinformData {
         address: &Address,
         tax_number: &TaxNumber,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let path = format!(
-            "credinform_data/{} - {}",
-            tax_number, &self.company_name
-        );
+        let path = format!("credinform_data/{} - {}", tax_number, &self.company_name);
         std::fs::create_dir_all(&path)?;
         let file_path = format!("{}/{}.json", path, address);
         let mut file = std::fs::File::create(&file_path)?;
