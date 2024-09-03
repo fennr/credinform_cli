@@ -7,4 +7,6 @@ pub struct Args {
     pub address: Address,
     #[arg(short, long, default_value = "7838368395")]
     pub tax_number: TaxNumber,
+    #[arg(short, long, default_value = "config.toml")]
+    pub path: String,
 }

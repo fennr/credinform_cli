@@ -1,8 +1,10 @@
 mod cli;
+mod config;
 mod credinform;
 
 use clap::Parser;
 use cli::Args;
+use config::Client;
 use credinform::{api, AccessToken, CredinformData};
 use reqwest::Client;
 use std::error::Error;
@@ -11,7 +13,7 @@ use std::error::Error;
 async fn main() -> Result<(), Box<dyn Error>> {
     let args: Args = Args::parse();
 
-    let client: Client = Client::new();
+    let client: Client = Client::from_toml(args.path.as_str())?;
 
     let token: AccessToken = api::get_token(&client).await?;
 

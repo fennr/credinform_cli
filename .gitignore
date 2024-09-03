@@ -25,3 +25,4 @@ Cargo.lock
 
 # Remove secrets
 .env
+config.toml

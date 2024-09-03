@@ -1,24 +1,16 @@
-use dotenv::dotenv;
-use reqwest::{Client, Url};
+use reqwest::Url;
 use std::error::Error;
 
-use super::models::{AccessToken, Address, CredinformData, TaxNumber};
+use crate::config::Client;
+
+use super::models::{AccessToken, Address, CredinformData, SearchCompany, TaxNumber};
 
 pub async fn get_token(client: &Client) -> Result<AccessToken, Box<dyn Error>> {
-    dotenv().ok();
-
-    let username = std::env::var("CREDINFORM_USERNAME").map_err(|_| {
-        Box::<dyn std::error::Error>::from("Failed to get CREDINFORM_USERNAME environment variable")
-    })?;
-    let password = std::env::var("CREDINFORM_PASSWORD").map_err(|_| {
-        Box::<dyn std::error::Error>::from("Failed to get CREDINFORM_PASSWORD environment variable")
-    })?;
-
     let response = client
         .post("https://restapi.credinform.ru/api/Authorization/GetAccessKey")
         .header("Content-Type", "application/json")
         .header("Accept", "application/json")
-        .json(&serde_json::json!({"username": username, "password": password}))
+        .json(&serde_json::json!({"username": client.username(), "password": client.password()}))
         .send()
         .await?
         .json::<serde_json::Value>()
@@ -27,7 +19,7 @@ pub async fn get_token(client: &Client) -> Result<AccessToken, Box<dyn Error>> {
     let access_key = response
         .get("accessKey")
         .and_then(|v| v.as_str())
-        .ok_or("Failed to get token")?;
+        .ok_or("Failed to get token, check your credentials in config.toml")?;
 
     Ok(AccessToken::new(access_key))
 }
@@ -37,12 +29,9 @@ async fn search_company(
     access_key: &AccessToken,
     tax_number: &TaxNumber,
 ) -> Result<String, Box<dyn Error>> {
-    dotenv().ok();
-    let api_version = std::env::var("CREDINFORM_API_VERSION")?;
-
     let url = Url::parse_with_params(
         "https://restapi.credinform.ru/api/Search/SearchCompany",
-        &[("apiVersion", api_version.as_str())],
+        &[("apiVersion", client.api_version())],
     )?;
 
     let response = client
@@ -81,16 +70,13 @@ pub async fn get_data(
     tax_number: &TaxNumber,
     address: &Address,
 ) -> Result<CredinformData, Box<dyn Error>> {
-    dotenv().ok();
-    let api_version = std::env::var("CREDINFORM_API_VERSION")?;
-
     let url = Url::parse_with_params(
         format!(
             "https://restapi.credinform.ru/api/CompanyInformation/{}",
             address
         )
         .as_str(),
-        &[("apiVersion", api_version.as_str())],
+        &[("apiVersion", client.api_version())],
     )?;
     println!("URL: {}", url);
     println!("Tax number: {}", tax_number);
@@ -112,7 +98,7 @@ pub async fn get_data(
 
     if response.status().is_success() {
         let response = response.json::<serde_json::Value>().await?;
-        let data = CredinformData::new(response);
+        let data = CredinformData::new(company.name.as_str(), response);
         println!("Data: {:?}", data);
         Ok(data?)
     } else {
