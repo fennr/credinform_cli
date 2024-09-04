@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 use reqwest;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -22,7 +23,7 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn from_toml(path: &str) -> Result<Client, Box<dyn std::error::Error>> {
+    pub fn from_toml(path: &str) -> Result<Client> {
         let content = match fs::read_to_string(path) {
             Ok(c) => c,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
@@ -36,14 +37,14 @@ impl Client {
                 };
                 let content = toml::to_string(&data)?;
                 fs::write(path, content)?;
-                return Err(format!("Config file not found. Created new file {}.", path).into());
+                return Err(anyhow!("Config file not found. Created new file {}.", path).into());
             }
             Err(e) => return Err(e.into()),
         };
 
         let data: Data = match toml::de::from_str(&content) {
             Ok(c) => c,
-            Err(e) => return Err(format!("Invalid TOML format: {}", e).into()),
+            Err(e) => return Err(anyhow!("Invalid TOML format: {}", e).into()),
         };
 
         Ok(Client {

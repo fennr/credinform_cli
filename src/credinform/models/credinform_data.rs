@@ -1,4 +1,5 @@
 use super::{Address, TaxNumber};
+use anyhow::Result;
 use serde::Serialize;
 use serde_json::Map;
 
@@ -27,11 +28,7 @@ impl CredinformData {
         })
     }
 
-    pub fn to_file(
-        &self,
-        address: &Address,
-        tax_number: &TaxNumber,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn to_file(&self, address: &Address, tax_number: &TaxNumber) -> Result<()> {
         let path = format!("credinform_data/{} - {}", tax_number, &self.company_name);
         std::fs::create_dir_all(&path)?;
         let file_path = format!("{}/{}.json", path, address);
