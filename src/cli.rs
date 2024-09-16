@@ -1,5 +1,5 @@
 use super::config::Client;
-use super::credinform::{api, AccessToken, Address, CredinformData, TaxNumber};
+use super::credinform::{api, AccessToken, Address, CredinformData, TaxNumber, CredinformFile};
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use std::sync::Arc;
@@ -18,6 +18,13 @@ pub struct Args {
         help = "Выгрузить все ручки описанные в config.toml"
     )]
     pub full: bool,
+
+    #[arg(
+        long,
+        default_value = "false",
+        help = "Выгрузить товарные знаки"
+    )]
+    pub trademarks: bool,
 
     #[arg(short, long, default_value = "7838368395", help = "ИНН компании")]
     pub tax_number: TaxNumber,
@@ -73,5 +80,14 @@ pub async fn process_single_address(
 ) -> Result<()> {
     let data = api::get_data(client, token, tax_number, address).await?;
     data.to_file(address, tax_number)?;
+    Ok(())
+}
+
+pub async fn process_trademarks(
+    client: &Arc<Client>,
+    token: &Arc<AccessToken>,
+    tax_number: &TaxNumber,
+) -> Result<()> {
+    api::get_trademarks(client, token, tax_number).await?;
     Ok(())
 }

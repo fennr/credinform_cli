@@ -3,7 +3,7 @@ use reqwest::Url;
 
 use crate::config::Client;
 
-use super::models::{AccessToken, Address, CredinformData, SearchCompany, TaxNumber};
+use super::models::{AccessToken, Address, CredinformData, SearchCompany, TaxNumber, CredinformFile};
 
 pub async fn get_token(client: &Client) -> Result<AccessToken, Error> {
     let response = client
@@ -119,4 +119,33 @@ pub async fn get_data(
     } else {
         Err(anyhow!("Failed request to {}", url))
     }
+}
+
+pub async fn get_trademarks(
+    client: &Client,
+    access_key: &AccessToken,
+    tax_number: &TaxNumber,
+) -> Result<CredinformData> {
+    let data = get_data(client, access_key, tax_number, &Address::new("Trademarks")).await?;
+
+    match data.data.get("trademarkList") {
+        Some(trademarks) => {
+            let trademarks = trademarks.as_array().unwrap();
+            for trademark in trademarks {
+                let file_image = &trademark["fileImage"];
+                let file = CredinformFile::new(data.company_name.as_str(), &file_image);
+                match file {
+                    Ok(file) => {
+                        file.save(tax_number)?;
+                    }
+                    Err(e) => {
+                        eprintln!("Error: {}", e);
+                    }
+                }
+            }
+        }
+        None => return Err(anyhow!("No trademarks")),
+    };
+
+    Ok(data)
 }

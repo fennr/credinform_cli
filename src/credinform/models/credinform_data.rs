@@ -5,8 +5,8 @@ use serde_json::Map;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct CredinformData {
-    company_name: String,
-    data: Map<String, serde_json::Value>,
+    pub company_name: String,
+    pub data: Map<String, serde_json::Value>,
 }
 
 impl std::fmt::Display for CredinformData {

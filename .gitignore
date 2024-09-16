@@ -31,3 +31,6 @@ Cargo.lock
 # Remove secrets
 .env
 config.toml
+
+# Remove artifacts
+/credinform_files/**
