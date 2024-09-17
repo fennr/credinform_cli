@@ -48,7 +48,7 @@ impl CredinformFile {
     }
 
     pub fn save(&self, tax_number: &TaxNumber) -> Result<()> {
-        let path = format!("credinform_files/{} - {}/files", tax_number, &self.company);
+        let path = format!("credinform_data/{} - {}/files", tax_number, &self.company);
         fs::create_dir_all(&path)?;
         let file_path = format!("{}/{}.{}", path, self.name, self.ext.to_ascii_lowercase());
         let decoded_data = general_purpose::STANDARD.decode(&self.bytes)?;
