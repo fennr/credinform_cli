@@ -128,27 +128,25 @@ pub async fn get_trademarks(
     client: &Client,
     access_key: &AccessToken,
     tax_number: &TaxNumber,
-) -> Result<CredinformData> {
+) -> Result<()> {
     let data = get_data(client, access_key, tax_number, &Address::new("Trademarks")).await?;
 
-    match data.data.get("trademarkList") {
-        Some(trademarks) => {
-            let trademarks = trademarks.as_array().unwrap();
-            for trademark in trademarks {
-                let file_image = &trademark["fileImage"];
-                let file = CredinformFile::new(data.company_name.as_str(), &file_image);
-                match file {
-                    Ok(file) => {
-                        file.save(tax_number)?;
-                    }
-                    Err(e) => {
-                        eprintln!("Error: {}", e);
-                    }
+    if let Some(trademarks) = data.data.get("trademarkList") {
+        for trademark in trademarks.as_array().unwrap() {
+            let file_image = &trademark["fileImage"];
+            let file = CredinformFile::new(data.company_name.as_str(), &file_image);
+            match file {
+                Ok(file) => {
+                    file.save(tax_number)?;
+                }
+                Err(e) => {
+                    error!("Error: {}", e);
                 }
             }
         }
-        None => return Err(anyhow!("No trademarks")),
-    };
+    } else {
+        warn!("No trademarks found");
+    }
 
-    Ok(data)
+    Ok(())
 }
