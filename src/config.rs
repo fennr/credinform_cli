@@ -1,14 +1,40 @@
 use anyhow::{anyhow, Result};
+use chrono::Local;
+use log::{Level, Log, Metadata, Record};
 use reqwest;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use toml;
+
+pub static CONSOLE_LOGGER: ConsoleLogger = ConsoleLogger;
+
+pub struct ConsoleLogger;
+
+impl Log for ConsoleLogger {
+    fn enabled(&self, metadata: &Metadata) -> bool {
+        metadata.level() <= Level::Info
+    }
+
+    fn log(&self, record: &Record) {
+        if self.enabled(record.metadata()) {
+            println!(
+                "{} [{}] - {}",
+                Local::now().format("%Y-%m-%d %H:%M:%S"),
+                record.level(),
+                record.args()
+            );
+        }
+    }
+
+    fn flush(&self) {}
+}
 
 #[derive(Deserialize, Serialize)]
 pub struct Credinform {
     username: String,
     password: String,
     api_version: String,
+    pub tax_numbers: Vec<String>,
     pub fields: Vec<String>,
 }
 
@@ -32,6 +58,7 @@ impl Client {
                         username: "your_username".to_string(),
                         password: "your_password".to_string(),
                         api_version: "1.7".to_string(),
+                        tax_numbers: Vec::new(),
                         fields: Vec::new(),
                     },
                 };

@@ -2,6 +2,7 @@ use super::{Address, TaxNumber};
 use anyhow::Result;
 use serde::Serialize;
 use serde_json::Map;
+use log::info;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct CredinformData {
@@ -34,7 +35,7 @@ impl CredinformData {
         let file_path = format!("{}/{}.json", path, address);
         let mut file = std::fs::File::create(&file_path)?;
         serde_json::to_writer_pretty(&mut file, &self.data)?;
-        println!(
+        info!(
             "Data saved to {}/{}",
             std::env::current_dir()?.display(),
             file_path

@@ -1,6 +1,7 @@
 use super::TaxNumber;
 use anyhow::Result;
 use base64::{engine::general_purpose, Engine as _};
+use log::info;
 use serde::Serialize;
 use std::fs;
 use std::io::Write;
@@ -54,7 +55,7 @@ impl CredinformFile {
         let decoded_data = general_purpose::STANDARD.decode(&self.bytes)?;
         let mut file = fs::File::create(&file_path)?;
         file.write_all(&decoded_data)?;
-        println!(
+        info!(
             "File saved to {}/{}",
             std::env::current_dir()?.display(),
             file_path

@@ -6,11 +6,19 @@ use anyhow::{anyhow, Result};
 use clap::Parser;
 use config::Client;
 use credinform::api;
+use log;
 use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = Arc::new(cli::Args::parse());
+    match log::set_logger(&config::CONSOLE_LOGGER) {
+        Ok(_) => log::set_max_level(log::LevelFilter::Info),
+        Err(e) => {
+            // handle the error here
+            eprintln!("Error setting logger: {}", e);
+        }
+    }
     let client = Arc::new(Client::from_toml(args.config.as_str())?);
     let token = Arc::new(api::get_token(&client).await?);
 

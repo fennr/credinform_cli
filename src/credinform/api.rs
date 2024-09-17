@@ -3,7 +3,10 @@ use reqwest::Url;
 
 use crate::config::Client;
 
-use super::models::{AccessToken, Address, CredinformData, SearchCompany, TaxNumber, CredinformFile};
+use super::models::{
+    AccessToken, Address, CredinformData, CredinformFile, SearchCompany, TaxNumber,
+};
+use log::{debug, error, info, warn};
 
 pub async fn get_token(client: &Client) -> Result<AccessToken, Error> {
     let response = client
@@ -93,12 +96,12 @@ pub async fn get_data(
         .as_str(),
         &[("apiVersion", client.api_version())],
     )?;
-    println!("URL: {}", url);
-    println!("Tax number: {}", tax_number);
+    debug!("URL: {}", url);
+    debug!("Tax number: {}", tax_number);
 
     let company = search_company(client, access_key, tax_number).await?;
-    println!("Company ID: {}", company.id);
-    println!("Company Name: {}", company.name);
+    debug!("Company ID: {}", company.id);
+    debug!("Company Name: {}", company.name);
 
     let response = client
         .post(url.clone())
