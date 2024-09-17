@@ -6,7 +6,7 @@ use crate::config::Client;
 use super::models::{
     AccessToken, Address, CredinformData, CredinformFile, SearchCompany, TaxNumber,
 };
-use log::{debug, error, info, warn};
+use log::{debug, error, warn};
 
 pub async fn get_token(client: &Client) -> Result<AccessToken, Error> {
     let response = client
@@ -128,7 +128,7 @@ pub async fn get_trademarks(
     client: &Client,
     access_key: &AccessToken,
     tax_number: &TaxNumber,
-) -> Result<()> {
+) -> Result<CredinformData> {
     let data = get_data(client, access_key, tax_number, &Address::new("Trademarks")).await?;
 
     if let Some(trademarks) = data.data.get("trademarkList") {
@@ -148,5 +148,5 @@ pub async fn get_trademarks(
         warn!("No trademarks found");
     }
 
-    Ok(())
+    Ok(data)
 }

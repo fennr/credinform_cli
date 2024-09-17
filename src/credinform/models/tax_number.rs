@@ -16,3 +16,14 @@ impl std::fmt::Display for TaxNumber {
         write!(f, "{}", self.0)
     }
 }
+
+
+impl TaxNumber {
+    pub fn new(tax_number: &str) -> Self {
+        TaxNumber(tax_number.to_string())
+    }
+
+    pub fn from_vec(vec: &Vec<String>) -> Vec<Self> {
+        vec.iter().map(|s| TaxNumber::new(s)).collect()
+    }
+}

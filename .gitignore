@@ -33,4 +33,4 @@ Cargo.lock
 config.toml
 
 # Remove artifacts
-/credinform_files/**
+/credinform_data/**
