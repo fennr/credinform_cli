@@ -2,9 +2,9 @@ use super::config::Client;
 use super::credinform::{api, AccessToken, Address, CredinformData, TaxNumber};
 use anyhow::{anyhow, Result};
 use clap::Parser;
+use log::error;
 use std::sync::Arc;
 use tokio::sync::mpsc::channel;
-use log::error;
 
 #[derive(Parser, Debug, Clone)]
 pub struct Args {

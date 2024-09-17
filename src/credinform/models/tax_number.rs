@@ -17,7 +17,6 @@ impl std::fmt::Display for TaxNumber {
     }
 }
 
-
 impl TaxNumber {
     pub fn new(tax_number: &str) -> Self {
         TaxNumber(tax_number.to_string())

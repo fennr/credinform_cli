@@ -1,8 +1,8 @@
 use super::{Address, TaxNumber};
 use anyhow::Result;
+use log::info;
 use serde::Serialize;
 use serde_json::Map;
-use log::info;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct CredinformData {
