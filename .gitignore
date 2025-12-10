@@ -14,7 +14,6 @@ Cargo.lock
 *.pdb
 
 # configs
-.*
 !.env_example
 *.config*
 
