@@ -19,6 +19,7 @@ Options:
   -t, --tax-number <TAX_NUMBER>  [default: 7838368395]
       --fns                       Получить данные из API FNS
   -h, --help                     Print help
+```
 
 ## Конфигурация
 
