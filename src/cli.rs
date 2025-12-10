@@ -1,5 +1,6 @@
 use super::config::Client;
 use super::credinform::{api, AccessToken, Address, CredinformData, TaxNumber};
+use super::fns::FnsClient;
 use anyhow::{anyhow, Result};
 use clap::Parser;
 use log::error;
@@ -25,6 +26,9 @@ pub struct Args {
 
     #[arg(short, long, default_value = "7838368395", help = "ИНН компании")]
     pub tax_number: TaxNumber,
+
+    #[arg(long, default_value = "false", help = "Выгрузить данные из API FNS")]
+    pub fns: bool,
 
     #[arg(
         short,
@@ -101,5 +105,22 @@ pub async fn process_trademarks(
     tax_number: &TaxNumber,
 ) -> Result<()> {
     api::get_trademarks(client, token, tax_number).await?;
+    Ok(())
+}
+
+pub async fn process_fns_all(client: &Arc<Client>) -> Result<()> {
+    for tax_number in TaxNumber::from_vec(&client.data.credinform.tax_numbers) {
+        process_fns_single(client, &tax_number).await?;
+    }
+
+    Ok(())
+}
+
+pub async fn process_fns_single(client: &Arc<Client>, tax_number: &TaxNumber) -> Result<()> {
+    let fns_client = FnsClient::new(client);
+    for endpoint in client.fns_fields() {
+        let response = fns_client.fetch(endpoint, tax_number).await?;
+        response.to_file(tax_number)?;
+    }
     Ok(())
 }

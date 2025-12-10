@@ -39,13 +39,37 @@ pub struct Credinform {
 }
 
 #[derive(Deserialize, Serialize)]
+pub struct Fns {
+    #[serde(default)]
+    pub token: String,
+    #[serde(default = "default_fns_base_url")]
+    pub base_url: String,
+    #[serde(default)]
+    pub fields: Vec<String>,
+}
+
+#[derive(Deserialize, Serialize)]
 pub struct Data {
     pub credinform: Credinform,
+    #[serde(default = "default_fns")]
+    pub fns: Fns,
 }
 
 pub struct Client {
     client: reqwest::Client,
     pub data: Data,
+}
+
+fn default_fns_base_url() -> String {
+    "https://api-fns.ru/api".to_string()
+}
+
+fn default_fns() -> Fns {
+    Fns {
+        token: String::new(),
+        base_url: default_fns_base_url(),
+        fields: Vec::new(),
+    }
 }
 
 impl Client {
@@ -61,6 +85,7 @@ impl Client {
                         tax_numbers: Vec::new(),
                         fields: Vec::new(),
                     },
+                    fns: default_fns(),
                 };
                 let content = toml::to_string(&data)?;
                 fs::write(path, content)?;
@@ -94,5 +119,17 @@ impl Client {
 
     pub fn api_version(&self) -> &str {
         &self.data.credinform.api_version
+    }
+
+    pub fn fns_token(&self) -> &str {
+        &self.data.fns.token
+    }
+
+    pub fn fns_base_url(&self) -> &str {
+        &self.data.fns.base_url
+    }
+
+    pub fn fns_fields(&self) -> &Vec<String> {
+        &self.data.fns.fields
     }
 }

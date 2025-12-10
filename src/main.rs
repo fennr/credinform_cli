@@ -1,6 +1,7 @@
 mod cli;
 mod config;
 mod credinform;
+mod fns;
 
 use anyhow::Result;
 use clap::{CommandFactory, Parser};
@@ -21,23 +22,53 @@ async fn main() -> Result<()> {
 
     let args = cli::Args::parse();
     let client = Arc::new(Client::from_toml(args.config.as_str())?);
-    let token = Arc::new(api::get_token(&client).await?);
     let tax_number = Arc::new(args.tax_number.clone());
 
-    match (args.full, args.address.is_some(), args.trademarks) {
-        (true, _, _) => cli::process_all_addresses(&client, &token, args.trademarks).await?,
-        (false, true, true) => {
-            cli::process_single_address(&client, &token, &tax_number, &args.address.unwrap())
-                .await?;
-            cli::process_trademarks(&client, &token, &tax_number).await?
+    let need_credinform = args.full || args.address.is_some() || args.trademarks;
+    let token = if need_credinform {
+        Some(Arc::new(api::get_token(&client).await?))
+    } else {
+        None
+    };
+
+    if args.full {
+        if let Some(token) = token.as_ref() {
+            cli::process_all_addresses(&client, token, args.trademarks).await?;
+        }
+        cli::process_fns_all(&client).await?;
+        return Ok(());
+    }
+
+    match (args.address.is_some(), args.trademarks, args.fns) {
+        (true, true, _) => {
+            if let Some(token) = token.as_ref() {
+                cli::process_single_address(&client, token, &tax_number, &args.address.unwrap())
+                    .await?;
+                cli::process_trademarks(&client, token, &tax_number).await?;
+            }
+            if args.fns {
+                cli::process_fns_single(&client, &tax_number).await?;
+            }
+        }
+        (true, false, _) => {
+            if let Some(token) = token.as_ref() {
+                cli::process_single_address(&client, token, &tax_number, &args.address.unwrap())
+                    .await?;
+            }
+            if args.fns {
+                cli::process_fns_single(&client, &tax_number).await?;
+            }
         }
         (false, true, false) => {
-            cli::process_single_address(&client, &token, &tax_number, &args.address.unwrap())
-                .await?
+            if let Some(token) = token.as_ref() {
+                cli::process_trademarks(&client, token, &tax_number).await?;
+            }
         }
-        (false, false, true) => cli::process_trademarks(&client, &token, &tax_number).await?,
+        (false, false, true) => {
+            cli::process_fns_single(&client, &tax_number).await?;
+        }
         _ => cli::Args::command().print_help()?,
-    }
+    };
 
     Ok(())
 }
