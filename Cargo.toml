@@ -1,6 +1,6 @@
 [package]
 name = "credinform_cli"
-version = "0.7.4"
+version = "0.7.5"
 edition = "2021"
 authors = ["Viktor Merkurev <mr.fennr@ya.ru>"]
 description = "Credinform cli API client"
