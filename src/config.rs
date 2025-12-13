@@ -1,10 +1,8 @@
 use anyhow::{anyhow, Result};
 use chrono::Local;
 use log::{Level, Log, Metadata, Record};
-use reqwest;
 use serde::{Deserialize, Serialize};
 use std::fs;
-use toml;
 
 pub static CONSOLE_LOGGER: ConsoleLogger = ConsoleLogger;
 
@@ -30,11 +28,16 @@ impl Log for ConsoleLogger {
 }
 
 #[derive(Deserialize, Serialize)]
+pub struct Settings {
+    #[serde(default)]
+    pub tax_numbers: Vec<String>,
+}
+
+#[derive(Deserialize, Serialize)]
 pub struct Credinform {
     username: String,
     password: String,
     api_version: String,
-    pub tax_numbers: Vec<String>,
     pub fields: Vec<String>,
 }
 
@@ -50,6 +53,8 @@ pub struct Fns {
 
 #[derive(Deserialize, Serialize)]
 pub struct Data {
+    #[serde(default = "default_settings")]
+    pub settings: Settings,
     pub credinform: Credinform,
     #[serde(default = "default_fns")]
     pub fns: Fns,
@@ -62,6 +67,12 @@ pub struct Client {
 
 fn default_fns_base_url() -> String {
     "https://api-fns.ru/api".to_string()
+}
+
+fn default_settings() -> Settings {
+    Settings {
+        tax_numbers: vec!["7838368395".to_string(), "7708004767".to_string()],
+    }
 }
 
 fn default_fns() -> Fns {
@@ -77,31 +88,22 @@ impl Client {
         let content = match fs::read_to_string(path) {
             Ok(c) => c,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                let data = Data {
-                    credinform: Credinform {
-                        username: "your_username".to_string(),
-                        password: "your_password".to_string(),
-                        api_version: "1.7".to_string(),
-                        tax_numbers: Vec::new(),
-                        fields: Vec::new(),
-                    },
-                    fns: default_fns(),
-                };
+                let data = default_data();
                 let content = toml::to_string(&data)?;
                 fs::write(path, content)?;
-                return Err(anyhow!("Config file not found. Created new file {}.", path).into());
+                return Err(anyhow!("Config file not found. Created new file {}.", path));
             }
             Err(e) => return Err(e.into()),
         };
 
         let data: Data = match toml::de::from_str(&content) {
             Ok(c) => c,
-            Err(e) => return Err(anyhow!("Invalid TOML format: {}", e).into()),
+            Err(e) => return Err(anyhow!("Invalid TOML format: {}", e)),
         };
 
         Ok(Client {
             client: reqwest::Client::new(),
-            data: data,
+            data,
         })
     }
 
@@ -121,6 +123,14 @@ impl Client {
         &self.data.credinform.api_version
     }
 
+    pub fn tax_numbers(&self) -> &Vec<String> {
+        &self.data.settings.tax_numbers
+    }
+
+    pub fn credinform_fields(&self) -> &Vec<String> {
+        &self.data.credinform.fields
+    }
+
     pub fn fns_token(&self) -> &str {
         &self.data.fns.token
     }
@@ -131,5 +141,18 @@ impl Client {
 
     pub fn fns_fields(&self) -> &Vec<String> {
         &self.data.fns.fields
+    }
+}
+
+fn default_data() -> Data {
+    Data {
+        settings: default_settings(),
+        credinform: Credinform {
+            username: "your_username".to_string(),
+            password: "your_password".to_string(),
+            api_version: "1.7".to_string(),
+            fields: Vec::new(),
+        },
+        fns: default_fns(),
     }
 }

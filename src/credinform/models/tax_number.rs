@@ -22,7 +22,7 @@ impl TaxNumber {
         TaxNumber(tax_number.to_string())
     }
 
-    pub fn from_vec(vec: &Vec<String>) -> Vec<Self> {
+    pub fn from_vec(vec: &[String]) -> Vec<Self> {
         vec.iter().map(|s| TaxNumber::new(s)).collect()
     }
 }

@@ -29,7 +29,7 @@ impl Address {
     pub fn new(address: &str) -> Self {
         Address(address.to_string())
     }
-    pub fn from_vec(addresses: &Vec<String>) -> Vec<Self> {
+    pub fn from_vec(addresses: &[String]) -> Vec<Self> {
         addresses
             .iter()
             .map(|a| Address::new(a))
