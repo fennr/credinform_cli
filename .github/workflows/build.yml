@@ -34,18 +34,18 @@ jobs:
         shell: bash
         run: |
           BIN_DIR="target/${{ matrix.target }}/release"
-          BIN_PATH="${BIN_DIR}/credinform_cli"
+          BIN_PATH="${BIN_DIR}/scoring"
           if [ -f "${BIN_PATH}.exe" ]; then
             BIN_PATH="${BIN_PATH}.exe"
           fi
-          ARCHIVE="credinform_cli-${{ matrix.target }}.tar.gz"
+          ARCHIVE="scoring-${{ matrix.target }}.tar.gz"
           (cd "${BIN_DIR}" && tar czf "${ARCHIVE}" "$(basename "${BIN_PATH}")")
           shasum -a 256 "${BIN_DIR}/${ARCHIVE}" > "${BIN_DIR}/${ARCHIVE%.tar.gz}.sha256"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: credinform_cli_artifacts_${{ matrix.target }}
+          name: scoring_artifacts_${{ matrix.target }}
           path: |
-            target/${{ matrix.target }}/release/credinform_cli-${{ matrix.target }}.tar.gz
-            target/${{ matrix.target }}/release/credinform_cli-${{ matrix.target }}.sha256
+            target/${{ matrix.target }}/release/scoring-${{ matrix.target }}.tar.gz
+            target/${{ matrix.target }}/release/scoring-${{ matrix.target }}.sha256
