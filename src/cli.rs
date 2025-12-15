@@ -7,6 +7,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use log::{error, warn};
 use serde_json::Value;
 use std::sync::Arc;
+use tokio::task::JoinSet;
 
 #[derive(Parser, Debug, Clone)]
 pub struct Args {
@@ -62,36 +63,59 @@ pub async fn process_all_addresses(
     progress: Option<&ProgressBar>,
 ) -> Result<()> {
     let addresses = Address::from_vec(client.credinform_fields());
+    let mut tasks = JoinSet::new();
+
     for tax_number in tax_numbers {
+        let tax_number_clone = tax_number.clone();
+
         if trademarks {
-            if let Err(e) = api::get_trademarks(client, token, tax_number).await {
-                error!("Ошибка выгрузки товарных знаков для {}: {}", tax_number, e);
-            }
-            if let Some(pb) = progress {
-                pb.inc(1);
-            }
+            let client = Arc::clone(client);
+            let token = Arc::clone(token);
+            let pb = progress.cloned();
+            tasks.spawn(async move {
+                if let Err(e) = api::get_trademarks(&client, &token, &tax_number_clone).await {
+                    error!("Ошибка выгрузки товарных знаков для {}: {}", tax_number_clone, e);
+                }
+                if let Some(pb) = pb {
+                    pb.inc(1);
+                }
+                Ok::<(), anyhow::Error>(())
+            });
         }
 
-        for address in &addresses {
-            match api::get_data(client, token, tax_number, address).await {
-                Ok(data) => {
-                    if let Err(err) = data.to_file(address, tax_number) {
+        for address in addresses.clone() {
+            let client = Arc::clone(client);
+            let token = Arc::clone(token);
+            let pb = progress.cloned();
+            let tax_number_clone = tax_number.clone();
+            tasks.spawn(async move {
+                match api::get_data(&client, &token, &tax_number_clone, &address).await {
+                    Ok(data) => {
+                        if let Err(err) = data.to_file(&address, &tax_number_clone) {
+                            error!(
+                                "Не удалось сохранить {} для {}: {}",
+                                address, tax_number_clone, err
+                            );
+                        }
+                    }
+                    Err(err) => {
                         error!(
-                            "Не удалось сохранить {} для {}: {}",
-                            address, tax_number, err
+                            "Не удалось получить {} для {}: {}",
+                            address, tax_number_clone, err
                         );
                     }
                 }
-                Err(err) => {
-                    error!(
-                        "Не удалось получить {} для {}: {}",
-                        address, tax_number, err
-                    );
+                if let Some(pb) = pb {
+                    pb.inc(1);
                 }
-            }
-            if let Some(pb) = progress {
-                pb.inc(1);
-            }
+                Ok::<(), anyhow::Error>(())
+            });
+        }
+    }
+
+    while let Some(res) = tasks.join_next().await {
+        if let Err(e) = res {
+            error!("Ошибка выполнения задачи: {}", e);
         }
     }
 
@@ -117,24 +141,38 @@ pub async fn process_fns_all(
     let endpoints = client.fns_fields().clone();
     let fns_client = FnsClient::new(client);
 
+    let mut tasks = JoinSet::new();
+
     for tax_number in tax_numbers {
-        for endpoint in &endpoints {
-            match fns_client.fetch(endpoint, tax_number).await {
-                Ok(response) => {
-                    if let Err(err) = response.to_file(tax_number) {
-                        warn!(
-                            "Не удалось сохранить {} для {}: {}",
-                            endpoint, tax_number, err
-                        );
+        for endpoint in endpoints.clone() {
+            let fns_client = fns_client.clone();
+            let tax_number_clone = tax_number.clone();
+            let pb = progress.cloned();
+            tasks.spawn(async move {
+                match fns_client.fetch(&endpoint, &tax_number_clone).await {
+                    Ok(response) => {
+                        if let Err(err) = response.to_file(&tax_number_clone) {
+                            warn!(
+                                "Не удалось сохранить {} для {}: {}",
+                                endpoint, tax_number_clone, err
+                            );
+                        }
+                    }
+                    Err(err) => {
+                        error!("Ошибка FNS {} для {}: {}", endpoint, tax_number_clone, err);
                     }
                 }
-                Err(err) => {
-                    error!("Ошибка FNS {} для {}: {}", endpoint, tax_number, err);
+                if let Some(pb) = pb {
+                    pb.inc(1);
                 }
-            }
-            if let Some(pb) = progress {
-                pb.inc(1);
-            }
+                Ok::<(), anyhow::Error>(())
+            });
+        }
+    }
+
+    while let Some(res) = tasks.join_next().await {
+        if let Err(e) = res {
+            error!("Ошибка выполнения FNS задачи: {}", e);
         }
     }
 
