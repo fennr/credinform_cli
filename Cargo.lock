@@ -128,6 +128,7 @@ dependencies = [
  "iana-time-zone",
  "js-sys",
  "num-traits",
+ "serde",
  "wasm-bindgen",
  "windows-link 0.2.1",
 ]
@@ -152,6 +153,15 @@ dependencies = [
  "anstyle",
  "clap_lex",
  "strsim",
+]
+
+[[package]]
+name = "clap_complete"
+version = "4.5.64"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4c0da80818b2d95eca9aa614a30783e42f62bf5fdfee24e68cfb960b071ba8d1"
+dependencies = [
+ "clap",
 ]
 
 [[package]]
@@ -215,6 +225,7 @@ dependencies = [
  "base64",
  "chrono",
  "clap",
+ "clap_complete",
  "indicatif",
  "log",
  "reqwest",

@@ -16,8 +16,12 @@ pub struct FnsClient {
 
 impl FnsClient {
     pub fn new(config: &Client) -> Self {
+        Self::new_with_client(config, &reqwest::Client::new())
+    }
+
+    pub fn new_with_client(config: &Client, http_client: &reqwest::Client) -> Self {
         FnsClient {
-            http: reqwest::Client::new(),
+            http: http_client.clone(),
             base_url: config.fns_base_url().trim_end_matches('/').to_string(),
             key: config.fns_token().to_string(),
         }

@@ -1,18 +1,24 @@
 mod cli;
+mod completion;
 mod config;
 mod credinform;
 mod fns;
+mod services;
 
 use anyhow::Result;
 use clap::{CommandFactory, Parser};
 use config::Client;
-use credinform::{api, Address};
-use serde_json::Value;
+use credinform::Address;
+use services::{CredinformService, FnsService, print_value};
 use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let args = cli::Args::parse();
+
+    if let Some(shell) = &args.completion {
+        return completion::generate_completion_script(shell).map_err(|e| anyhow::anyhow!("Failed to generate completion: {}", e));
+    }
 
     match log::set_logger(&config::CONSOLE_LOGGER) {
         Ok(_) => {
@@ -27,6 +33,8 @@ async fn main() -> Result<()> {
     }
 
     let client = Arc::new(Client::from_toml(args.config.as_str())?);
+    let credinform_service = CredinformService::new(Arc::clone(&client));
+    let fns_service = FnsService::new(Arc::clone(&client));
 
     if args.full {
         let tax_numbers = cli::collect_tax_numbers(&client)?;
@@ -45,10 +53,10 @@ async fn main() -> Result<()> {
         }
 
         let pb = cli::progress_bar(total as u64);
-        let token = Arc::new(api::get_token(&client).await?);
-        cli::process_all_addresses(&client, &token, &tax_numbers, args.trademarks, Some(&pb))
+        let token = Arc::new(credinform_service.get_token().await?);
+        credinform_service.process_all_addresses(&token, &tax_numbers, args.trademarks, Some(&pb))
             .await?;
-        cli::process_fns_all(&client, &tax_numbers, Some(&pb)).await?;
+        fns_service.process_all(&tax_numbers, Some(&pb)).await?;
         pb.finish_with_message("Готово");
         return Ok(());
     }
@@ -57,14 +65,14 @@ async fn main() -> Result<()> {
 
     if args.cred {
         let tax_number = cli::pick_tax_number(&args, &client)?;
-        let token = Arc::new(api::get_token(&client).await?);
+        let token = Arc::new(credinform_service.get_token().await?);
 
         if let Some(field) = args.field.as_ref() {
             let address = Address::new(field);
-            let data = cli::process_single_address(&client, &token, &tax_number, &address).await?;
-            cli::print_value(&Value::Object(data.data.clone()))?;
+            let data = credinform_service.process_single_address(&token, &tax_number, &address).await?;
+            print_value(&serde_json::Value::Object(data.data.clone()))?;
         } else {
-            cli::process_all_addresses(&client, &token, &[tax_number], args.trademarks, None)
+            credinform_service.process_all_addresses(&token, &[tax_number], args.trademarks, None)
                 .await?;
         }
         did_work = true;
@@ -73,10 +81,10 @@ async fn main() -> Result<()> {
     if args.fns {
         let tax_number = cli::pick_tax_number(&args, &client)?;
         if let Some(field) = args.field.as_ref() {
-            let response = cli::process_fns_single(&client, &tax_number, field).await?;
-            cli::print_value(&response.data)?;
+            let response = fns_service.process_single(&tax_number, field).await?;
+            print_value(&response.data)?;
         } else {
-            cli::process_fns_all(&client, &[tax_number], None).await?;
+            fns_service.process_all(&[tax_number], None).await?;
         }
         did_work = true;
     }

@@ -53,6 +53,9 @@ pub struct Args {
 
     #[arg(long, default_value = "config.toml", help = "Путь к config.toml")]
     pub config: String,
+
+    #[arg(long, value_name = "SHELL", help = "Generate completion script for shell")]
+    pub completion: Option<String>,
 }
 
 pub async fn process_all_addresses(
